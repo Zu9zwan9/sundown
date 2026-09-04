@@ -19,7 +19,15 @@ INTERVAL=900
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --interval) INTERVAL="$2"; shift 2 ;;
+        --interval)
+            # Validated here rather than by launchd. An empty $2 trips `set -u`
+            # with "unbound variable", and a non-numeric one writes a plist
+            # whose <integer> is not an integer — launchctl then rejects the
+            # whole job with an error that names neither this flag nor a number.
+            [[ -n "${2:-}" ]] || { echo "✗ --interval needs a value in seconds" >&2; exit 2; }
+            [[ "$2" =~ ^[1-9][0-9]*$ ]] \
+                || { echo "✗ --interval must be a positive whole number of seconds, got '$2'" >&2; exit 2; }
+            INTERVAL="$2"; shift 2 ;;
         --uninstall)
             launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
             rm -f "$PLIST"

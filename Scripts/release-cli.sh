@@ -18,6 +18,22 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Preflight, before anything is built or signed. Both of these used to fail
+# at the last step of a release: node at the package.json rewrite, and a
+# version skew not at all — it shipped. bundle.sh learned this lesson about
+# Pillow; this script had not.
+command -v node >/dev/null || {
+  echo "✗ node is not on PATH, and the package.json rewrite below needs it." >&2
+  echo "  Without it this script signs a binary and then dies, leaving a" >&2
+  echo "  release asset whose checksum was never recorded — which bin/sundown.js" >&2
+  echo "  will refuse to run." >&2
+  exit 1
+}
+
+# One version, three files. release.sh checks this; there is no reason the
+# CLI release path should be the one that can ship a mismatch.
+./Scripts/bump-version.sh --check || exit 1
+
 VERSION="$(cat VERSION)"
 ARCH="$([[ "$(uname -m)" == "arm64" ]] && echo arm64 || echo x64)"
 IDENTITY="${SIGN_IDENTITY:-}"

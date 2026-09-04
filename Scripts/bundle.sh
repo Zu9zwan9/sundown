@@ -107,8 +107,14 @@ fi
 
 # Ad-hoc signature. Enough for local use and for SMAppService to register.
 # Replace with your Developer ID before distributing to anyone else.
+#
+# No --deep: `man codesign` marks it DEPRECATED for signing as of macOS 13,
+# and it applies every signing option to nested content in turn, which is
+# "almost never what you want". This bundle has no nested code to reach —
+# release.sh already signs the real thing without it, and the two scripts
+# disagreeing was the bug.
 echo "▸ Signing (ad-hoc)"
-codesign --force --deep --sign - "$APP"
+codesign --force --sign - "$APP"
 
 echo "✓ $APP"
 echo
