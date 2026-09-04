@@ -1,0 +1,30 @@
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Our build output — bundles, icons, DMGs, the CLI binary
+build/
+
+# Xcode, if anyone opens the package there
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Never commit signing material. The release workflow reads these from
+# repository secrets; a .p12 or a provisioning profile in git history is a
+# problem you cannot fully undo.
+*.p12
+*.cer
+*.certSigningRequest
+*.provisionprofile
+*.mobileprovision
+*.keychain-db
+
+# macOS
+.DS_Store
+
+# npm packaging
+node_modules/
+*.tgz

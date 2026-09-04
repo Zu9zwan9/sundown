@@ -1,0 +1,11 @@
+# On placement: keep the Buy Me a Coffee link at the *bottom* of the README,
+# after the honest-limits section. A donate button above the fold on a tool
+# that can kill your processes reads as a pitch before trust is established,
+# and this category runs on trust.
+#
+# buy_me_a_coffee below is commented out until the account exists — GitHub
+# renders a broken Sponsor button for a handle that doesn't resolve, which is
+# worse than no button.
+
+github: [Zu9zwan9]
+# buy_me_a_coffee: YOUR_BMC_HANDLE

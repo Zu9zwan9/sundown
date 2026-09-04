@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Deliberately empty.
+
+      Sundown needs no entitlements. Under the hardened runtime it can still
+      read other same-user processes' arguments, send them signals, and spawn
+      lsof and docker — none of those are entitlement-gated for processes you
+      already own.
+
+      What is NOT here, and why:
+
+      · com.apple.security.app-sandbox
+          Would break the entire product. A sandboxed process cannot signal
+          processes outside its sandbox. This is also why the Mac App Store is
+          closed to this app — see DISTRIBUTION.md.
+
+      · com.apple.security.cs.disable-library-validation
+          Not needed, and asking for it weakens the hardened runtime for no
+          gain.
+
+      · com.apple.security.cs.allow-unsigned-executable-memory
+      · com.apple.security.cs.allow-jit
+          No JIT, no dynamic codegen.
+
+      · com.apple.security.automation.apple-events
+          Sundown never scripts other apps.
+
+      An empty entitlements file is not an oversight — it's the smallest
+      possible claim on the user's machine, which is the point of the product.
+      If a future change adds one, it needs a line here explaining why.
+    -->
+</dict>
+</plist>

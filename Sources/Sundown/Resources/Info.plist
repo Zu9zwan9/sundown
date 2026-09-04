@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Sundown</string>
+    <key>CFBundleDisplayName</key>
+    <string>Sundown</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.sundown.app</string>
+    <key>CFBundleExecutable</key>
+    <string>Sundown</string>
+    <key>CFBundleIconFile</key>
+    <string>Sundown</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.0</string>
+    <!-- Kept equal to CFBundleShortVersionString by Scripts/bump-version.sh.
+         Apple compares this dotted-numerically and it must only ever increase,
+         which semver already guarantees. Nothing has shipped yet, so starting
+         it here rather than at "1" costs nothing and avoids a version that
+         appears to go backwards on the first release. -->
+    <key>CFBundleVersion</key>
+    <string>0.1.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+
+    <!-- Menu bar only. No Dock tile, no window on launch. -->
+    <key>LSUIElement</key>
+    <true/>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>Sundown</string>
+    <key>NSSupportsAutomaticTermination</key>
+    <false/>
+    <key>NSSupportsSuddenTermination</key>
+    <false/>
+</dict>
+</plist>

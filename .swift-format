@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "lineLength": 100,
+  "indentation": { "spaces": 4 },
+  "respectsExistingLineBreaks": true,
+  "lineBreakBeforeControlFlowKeywords": false,
+  "lineBreakBeforeEachArgument": false,
+  "prioritizeKeepingFunctionOutputTogether": true,
+  "indentConditionalCompilationBlocks": false,
+
+  "//": "Formatting only. The opinionated lint-only rules (documentation-comment validation, naming, trailing-closure ambiguity) are deliberately left off: they cannot be auto-fixed, so enabling them would mean CI asks for changes the formatter can't make. Reviewers catch those better than a linter does.",
+  "rules": {
+    "OrderedImports": true,
+    "ReturnVoidInsteadOfEmptyTuple": true,
+    "UseShorthandTypeNames": true,
+    "UseSynthesizedInitializer": false,
+    "NoBlockComments": false,
+    "NoLeadingUnderscores": false,
+    "ValidateDocumentationComments": false,
+    "AlwaysUseLowerCamelCase": false
+  }
+}

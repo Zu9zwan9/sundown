@@ -1,0 +1,110 @@
+name: Release
+
+# Tag-triggered. Signs, notarises, staples, and attaches the artefacts to a
+# GitHub release.
+#
+# Required repository secrets:
+#
+#   BUILD_CERTIFICATE_BASE64  Developer ID Application cert as .p12, base64'd:
+#                               base64 -i DeveloperID.p12 | pbcopy
+#   P12_PASSWORD              Password you set when exporting the .p12
+#   KEYCHAIN_PASSWORD         Any random string; a throwaway keychain uses it
+#   APPLE_ID                  Apple ID email
+#   APPLE_TEAM_ID             10-character Team ID
+#   APPLE_APP_PASSWORD        App-specific password from appleid.apple.com
+#
+# Note: no provisioning profile. Those are for App Store and device builds.
+# Developer ID direct distribution doesn't use one, and adding it to the
+# recipe is a common way to waste an afternoon.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Sign, notarise, publish
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versions
+        run: swift --version && xcodebuild -version && sw_vers
+
+      # Gate the whole release on the tests. A signed broken build is worse
+      # than no build, because it carries your identity.
+      - name: Test
+        run: swift test
+
+      - name: Import signing certificate
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$P12_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Store notary credentials
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "sundown-notary" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD"
+
+      - name: Build, sign, notarise, staple
+        run: ./Scripts/release.sh --dmg
+
+      - name: Package the CLI
+        run: |
+          cd build
+          tar -czf sundown-cli-macos.tar.gz sundown
+          shasum -a 256 sundown-cli-macos.tar.gz | tee cli-sha256.txt
+
+      # Tarball checksum for the Homebrew formula, printed where you can copy
+      # it rather than recomputing by hand at 1am.
+      - name: Source tarball checksum for the tap
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+          echo "Formula url:    $URL"
+          echo -n "Formula sha256: "
+          curl -sL "$URL" | shasum -a 256 | cut -d' ' -f1
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            build/Sundown.dmg
+            build/sundown-cli-macos.tar.gz
+            build/cli-sha256.txt
+
+      # Belt and braces: hosted runners are destroyed, but leaving a signing
+      # identity in a keychain is not a habit worth having.
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
