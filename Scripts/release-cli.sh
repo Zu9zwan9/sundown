@@ -62,6 +62,11 @@ echo "  sha256 $SHA"
 # Rewritten in place so the published package and the uploaded asset cannot
 # disagree. Node rather than sed: package.json is JSON, and a regex that edits
 # JSON is a bug waiting for a reformat.
+#
+# package.json is stored in exactly the shape JSON.stringify(…, null, 2)
+# emits — expanded, never compact one-liners. Hand-tightening it back to
+# `"bin": { "sundown": "…" }` reads nicer and costs a 20-line reformat diff on
+# top of the one changed checksum, every single release. Leave it expanded.
 node -e '
   const fs = require("fs");
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));

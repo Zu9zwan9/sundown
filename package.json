@@ -2,15 +2,35 @@
   "name": "sundown-cli",
   "version": "0.1.0",
   "description": "Which MCP servers you pay for on every request and never call, and what your agent sessions left running.",
-  "bin": { "sundown": "bin/sundown.js" },
-  "files": ["bin/sundown.js", "README.md", "LICENSE"],
-  "repository": { "type": "git", "url": "git+https://github.com/Zu9zwan9/sundown.git" },
+  "bin": {
+    "sundown": "bin/sundown.js"
+  },
+  "files": [
+    "bin/sundown.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zu9zwan9/sundown.git"
+  },
   "homepage": "https://github.com/Zu9zwan9/sundown#readme",
   "bugs": "https://github.com/Zu9zwan9/sundown/issues",
   "license": "MIT",
-  "engines": { "node": ">=18" },
-  "os": ["darwin"],
-  "keywords": ["mcp", "claude", "context", "tokens", "cleanup", "macos"],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin"
+  ],
+  "keywords": [
+    "mcp",
+    "claude",
+    "context",
+    "tokens",
+    "cleanup",
+    "macos"
+  ],
   "checksums": {
     "arm64": "REPLACE_WITH_SHA256_OF_sundown-macos-arm64.tar.gz",
     "x64": "REPLACE_WITH_SHA256_OF_sundown-macos-x64.tar.gz"
