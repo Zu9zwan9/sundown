@@ -27,9 +27,14 @@ curl -sL https://github.com/Zu9zwan9/sundown/archive/refs/tags/v0.1.0.tar.gz \
   | shasum -a 256
 ```
 
-**4. Fill in the formula.** Copy `sundown.rb` into the tap under `Formula/`,
-replacing `Zu9zwan9` throughout and `REPLACE_WITH_SHASUM_OF_THE_TARBALL` with the
-value from step 3.
+**4. Fill in the formula.** Copy `sundown.rb` into the tap under `Formula/`
+and add the stable pair above `head` — the in-tree formula ships head-only
+because there is nothing to checksum until step 2 has run:
+
+```ruby
+url "https://github.com/Zu9zwan9/sundown/archive/refs/tags/v0.1.0.tar.gz"
+sha256 "<the value from step 3>"
+```
 
 ```bash
 mkdir -p ../homebrew-sundown/Formula

@@ -9,10 +9,16 @@
 class Sundown < Formula
   desc "Reap orphaned MCP servers and agent processes on macOS"
   homepage "https://github.com/Zu9zwan9/sundown"
-  url "https://github.com/Zu9zwan9/sundown/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "REPLACE_WITH_SHASUM_OF_THE_TARBALL"
   license "MIT"
   head "https://github.com/Zu9zwan9/sundown.git", branch: "main"
+
+  # No `url`/`sha256` yet, on purpose. There is no tag to point at, so any
+  # pair written here is either a 404 or a placeholder that fails with a
+  # checksum mismatch — the two worst ways to greet a first install.
+  #
+  # Head-only is a valid formula: `brew install --HEAD` works the moment the
+  # repo is public, and `brew install` without it says "no stable download",
+  # which is true. Add the stable pair when you tag — see README.md step 3.
 
   depends_on xcode: ["15.0", :build]
   depends_on macos: :sonoma # macOS 14, for MenuBarExtra and @Observable
