@@ -237,20 +237,45 @@ if options.watch {
 // and transcript readers already count what was used. Only a tool that reads
 // the process table *and* the transcripts can say which servers you pay for
 // and never touch, which is the only version of this that implies an action.
-if options.showIdle && !options.json {
-    // Two readings, deliberately. Recent sessions price a request you would
-    // send now; deep history is what "never called" has to be measured
-    // against, and the two windows are not the same window.
+// Two readings, deliberately. Recent sessions price a request you would send
+// now; deep history is what "never called" has to be measured against, and the
+// two windows are not the same window.
+func idleReport() -> IdleServerReport {
     let recent = TranscriptMetrics.load()
     let history = TranscriptMetrics.load(limit: IdleServerReport.usageHistoryLimit)
-    let report = IdleServerReport.build(
+    return IdleServerReport.build(
         servers: currentServers(metrics: history),
         registry: registry,
         metrics: history,
         fixedPrefixTokens: recent.fixedPrefixTokens
     )
-    for line in report.report() { Console.write(line.isEmpty ? "" : "  \(line)") }
+}
+
+if options.showIdle && !options.json {
+    for line in idleReport().report() { Console.write(line.isEmpty ? "" : "  \(line)") }
     Console.write()
+    exit(0)
+}
+
+// The same report, in the encoding a public index can pool. Printed, never
+// posted: this opens no socket, and the person reading it decides whether any
+// of it is published. That is slower than telemetry and it is the only version
+// compatible with the README's promise of being entirely local.
+if options.contribute {
+    guard let document = ContributionDocument.build(from: idleReport()) else {
+        Console.error("Nothing worth contributing.")
+        Console.error("")
+        Console.error("Either no running server matched a declaration in your config, or no")
+        Console.error("standing charge could be measured from recent transcripts. Run")
+        Console.error("`sundown --idle` to see which of the two it is.")
+        exit(1)
+    }
+    do {
+        Console.write(try document.json())
+    } catch {
+        Console.error("sundown: could not encode the document: \(error.localizedDescription)")
+        exit(2)
+    }
     exit(0)
 }
 

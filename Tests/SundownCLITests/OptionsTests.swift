@@ -80,3 +80,20 @@ final class OptionsTests: XCTestCase {
         XCTAssertNil(Options.parseSize("banana"))
     }
 }
+
+// MARK: - --contribute
+
+extension OptionsTests {
+
+    /// Publishing is a report. If this ever parses as an action, a command whose
+    /// job is to print JSON gained the power to end processes.
+    func testContributeIsAlwaysADryRun() throws {
+        XCTAssertTrue(try Options.parse(["--contribute"]).contribute)
+        XCTAssertTrue(try Options.parse(["--contribute"]).dryRun)
+        XCTAssertTrue(try Options.parse(["--contribute", "--yes"]).dryRun)
+    }
+
+    func testContributeIsOffByDefault() throws {
+        XCTAssertFalse(try Options.parse([]).contribute)
+    }
+}

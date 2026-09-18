@@ -36,6 +36,10 @@ struct Options {
     /// Diff the current standing charge against the last snapshot.
     var compareSnapshot = false
 
+    /// Print what this machine can honestly say in public, for the index.
+    /// Writes to stdout and opens no socket — see ContributionDocument.
+    var contribute = false
+
     enum Action {
         case run
         case help
@@ -108,6 +112,10 @@ struct Options {
           --list-providers               Print known provider ids.
           --self-test                    Check the config-to-transcript join on
                                            this machine. Exits 1 if it broke.
+          --contribute                   Print this machine's server set and its
+                                           measured standing charge as JSON, for
+                                           the public cost index. Prints to
+                                           stdout and sends nothing.
           -h, --help                     This.
           --version                      Version.
 
@@ -189,6 +197,9 @@ struct Options {
             case "--compare":
                 options.compareSnapshot = true
                 options.dryRun = true
+            case "--contribute":
+                options.contribute = true
+                options.dryRun = true  // a report, never an action
             case "--include-in-use": options.includeInUse = true
             case "-n", "--dry-run": options.dryRun = true
             case "-y", "--yes": options.assumeYes = true
