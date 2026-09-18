@@ -37,13 +37,10 @@ transcripts your agent already wrote, and never message content.
 brew install Zu9zwan9/sundown/sundown
 ```
 
-Or run it once without installing anything:
+macOS 14+, Apple silicon. Intel builds from source through the same command.
 
-```bash
-npx sundown-cli --idle
-```
-
-macOS 14+. The npm package is named `sundown-cli` because `sundown` on npm is
+An `npx sundown-cli` route exists in `bin/sundown.js` and is not published yet.
+When it is, the package is named `sundown-cli` because `sundown` on npm is
 [Ionică Bizău's sunrise/sunset calculator](https://www.npmjs.com/package/sundown),
 published since 2018. The command is still `sundown`.
 
