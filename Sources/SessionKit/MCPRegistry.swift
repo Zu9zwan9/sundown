@@ -118,6 +118,32 @@ public struct MCPRegistry: Sendable {
         }
     }
 
+    /// The declaration for a process, falling back to the nearest ancestor's
+    /// when the process itself carries no trace of one.
+    ///
+    /// `npm exec @gitkraken/gk mcp` matches what the user declared; the binary
+    /// it execs three levels down does not, and is the same server. Without
+    /// this, every wrapper chain ends in a row named `node` with no config key
+    /// to join on — which is most of what Sundown declines to judge.
+    ///
+    /// The walk stops at the first client it meets, so a server never inherits
+    /// from a sibling that happens to sit higher up the same tree.
+    public func declaration(
+        matching process: ProcessSnapshot,
+        in table: [pid_t: ProcessSnapshot]
+    ) -> Declaration? {
+        if let direct = declaration(matching: process) { return direct }
+
+        var cursor = process.parentPID
+        var seen: Set<pid_t> = [process.pid]
+        while cursor > 1, let ancestor = table[cursor], seen.insert(cursor).inserted {
+            if let inherited = declaration(matching: ancestor) { return inherited }
+            if Provider.identifying(ancestor) != nil { return nil }
+            cursor = ancestor.parentPID
+        }
+        return nil
+    }
+
     public func declaration(identity: String) -> Declaration? {
         declarations.first { $0.identity == identity }
     }
@@ -189,26 +215,66 @@ public struct MCPRegistry: Sendable {
     /// uses, and therefore the name that sanitises into the transcript id.
     /// Getting this wrong is not a display bug — it breaks the join.
     static func codePlugins(home: URL) -> [Declaration] {
-        let index = home.appending(path: ".claude/plugins/installed_plugins.json")
-        guard let data = try? Data(contentsOf: index),
-            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let plugins = root["plugins"] as? [String: Any]
-        else { return [] }
-
         var found: [Declaration] = []
-        for (key, value) in plugins {
-            // "aws-startup-advisor@claude-plugins-official" — the marketplace
-            // after the @ is not part of the name the client uses.
-            let plugin = key.split(separator: "@").first.map(String.init) ?? key
-            for case let install as [String: Any] in (value as? [Any] ?? []) {
-                guard let path = install["installPath"] as? String else { continue }
-                let manifest = URL(fileURLWithPath: path).appending(path: ".mcp.json")
-                found.append(
-                    contentsOf: parse(
-                        manifest, client: "Claude Code", prefix: "plugin:\(plugin):"))
+        for (plugin, directory) in codePluginDirectories(home: home) {
+            // Two spellings in the wild: marketplace installs write
+            // `.mcp.json`, account-synced plugins write `mcp.json`. Reading
+            // one of them is how a running server ends up with no name.
+            for manifest in [".mcp.json", "mcp.json"] {
+                found += parse(
+                    directory.appending(path: manifest),
+                    client: "Claude Code", prefix: "plugin:\(plugin):")
             }
         }
         return found
+    }
+
+    /// Every plugin directory, keyed by the name the client uses.
+    ///
+    /// Plugins arrive two ways and only one was being read:
+    /// `installed_plugins.json` lists marketplace installs, while
+    /// `plugins/synced/` holds the ones synced from the account. A plugin
+    /// missing here is a process Sundown can see running and cannot name, and
+    /// an unnameable process is one it refuses to judge.
+    private static func codePluginDirectories(home: URL) -> [(String, URL)] {
+        var directories: [(String, URL)] = []
+        var seen: Set<String> = []
+
+        func add(_ plugin: String, _ directory: URL) {
+            guard seen.insert(directory.standardizedFileURL.path).inserted else { return }
+            directories.append((plugin, directory))
+        }
+
+        let index = home.appending(path: ".claude/plugins/installed_plugins.json")
+        if let data = try? Data(contentsOf: index),
+            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let plugins = root["plugins"] as? [String: Any]
+        {
+            for (key, value) in plugins {
+                // "aws-startup-advisor@claude-plugins-official" — the
+                // marketplace after the @ is not part of the name the client
+                // uses, and therefore not part of the transcript id.
+                let plugin = key.split(separator: "@").first.map(String.init) ?? key
+                for case let install as [String: Any] in (value as? [Any] ?? []) {
+                    guard let path = install["installPath"] as? String else { continue }
+                    add(plugin, URL(fileURLWithPath: path))
+                }
+            }
+        }
+
+        // synced/<workspace>/<plugin>/, alongside `<plugin>.meta.json` files
+        // that are not directories and carry an extension.
+        for workspace in contents(of: home.appending(path: ".claude/plugins/synced")) {
+            for plugin in contents(of: workspace) where plugin.pathExtension.isEmpty {
+                add(plugin.lastPathComponent, plugin)
+            }
+        }
+        return directories
+    }
+
+    private static func contents(of url: URL) -> [URL] {
+        (try? FileManager.default.contentsOfDirectory(
+            at: url, includingPropertiesForKeys: nil)) ?? []
     }
 
     // MARK: - Parsing

@@ -244,6 +244,71 @@ final class SessionKitTests: XCTestCase {
         XCTAssertEqual(registry.declaration(matching: running)?.name, "postgres")
     }
 
+    // MARK: - Inherited declarations
+
+    /// The real chain from a machine running the gitkraken plugin. The
+    /// launcher carries the declared command; what it execs three levels down
+    /// does not, and is still that server. Before this, four processes showed
+    /// up as "node", "gk" and "wrapper" with no name to look up.
+    private func gitkrakenChain() -> (MCPRegistry, [pid_t: ProcessSnapshot]) {
+        let registry = MCPRegistry(declarations: [
+            .init(
+                name: "gitkraken", client: "Claude Code",
+                fingerprint: "@gitkraken/gk", scope: nil)
+        ])
+        let chain = [
+            process(pid: 900, ppid: 1, name: "claude", "/usr/local/bin/claude"),
+            process(pid: 4820, ppid: 900, name: "npm", "npm", "exec", "@gitkraken/gk", "mcp"),
+            process(pid: 4821, ppid: 4820, "node", "/Users/me/.npm/_npx/f5/bin/gk", "mcp"),
+            process(pid: 4822, ppid: 4821, "/Users/me/.npm/_npx/f5/@gitkraken/gk/bin/gk", "mcp"),
+            process(pid: 4823, ppid: 4822, name: "gk", "/Users/me/Library/GitKrakenCLI/gk", "mcp"),
+        ]
+        return (registry, Dictionary(uniqueKeysWithValues: chain.map { ($0.pid, $0) }))
+    }
+
+    func testDescendantsOfADeclaredLauncherInheritItsDeclaration() {
+        let (registry, table) = gitkrakenChain()
+        for pid: pid_t in [4820, 4821, 4822, 4823] {
+            XCTAssertEqual(
+                registry.declaration(matching: table[pid]!, in: table)?.name, "gitkraken",
+                "pid \(pid) is part of the gitkraken chain and should carry its name")
+        }
+    }
+
+    /// The client is the boundary. Everything between it and a declared
+    /// launcher belongs to that server; nothing on the far side does.
+    func testTheWalkStopsAtTheClient() {
+        let (registry, chain) = gitkrakenChain()
+        let sibling = process(pid: 5000, ppid: 900, "node", "/x/unrelated/index.js")
+        var table = chain
+        table[sibling.pid] = sibling
+        XCTAssertNil(
+            registry.declaration(matching: sibling, in: table),
+            "a different server under the same client must not inherit gitkraken")
+        XCTAssertNil(registry.declaration(matching: table[900]!, in: table))
+    }
+
+    func testADirectMatchIsNotOverriddenByAnAncestor() {
+        let registry = MCPRegistry(declarations: [
+            .init(name: "outer", client: "Claude Code", fingerprint: "outer-cmd", scope: nil),
+            .init(name: "inner", client: "Claude Code", fingerprint: "inner-cmd", scope: nil),
+        ])
+        let parent = process(pid: 10, ppid: 1, "outer-cmd")
+        let child = process(pid: 11, ppid: 10, "inner-cmd")
+        let table = [parent.pid: parent, child.pid: child]
+        XCTAssertEqual(registry.declaration(matching: child, in: table)?.name, "inner")
+    }
+
+    /// A parent pointing at its own child would hang the walk.
+    func testACycleTerminates() {
+        let registry = MCPRegistry(declarations: [
+            .init(name: "x", client: "Claude Code", fingerprint: "never-matches", scope: nil)
+        ])
+        let a = process(pid: 20, ppid: 21, "a")
+        let b = process(pid: 21, ppid: 20, "b")
+        XCTAssertNil(registry.declaration(matching: a, in: [a.pid: a, b.pid: b]))
+    }
+
     // MARK: - Scope
 
     /// What a server is pointed at is what makes it recognisable. Two
@@ -354,5 +419,59 @@ final class SessionKitTests: XCTestCase {
             [Kind.listener, .agent, .container, .mcpServer].sorted(),
             [.mcpServer, .agent, .container, .listener]
         )
+    }
+}
+
+/// Plugin servers are the majority of what Sundown could see running and
+/// could not name. Both of these were real misses on a real machine.
+final class PluginRegistryTests: XCTestCase {
+
+    private func makeHome() throws -> URL {
+        let home = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "sundown-plugins-\(UUID().uuidString)")
+        let synced = home.appending(path: ".claude/plugins/synced/workspace-1")
+        try FileManager.default.createDirectory(
+            at: synced.appending(path: "gitkraken"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: synced.appending(path: "pdf-viewer"), withIntermediateDirectories: true)
+
+        // The synced spelling: no leading dot.
+        try #"{"mcpServers":{"gitkraken":{"command":"npx","args":["-y","@gitkraken/gk","mcp"]}}}"#
+            .write(
+                to: synced.appending(path: "gitkraken/mcp.json"),
+                atomically: true, encoding: .utf8)
+        // The marketplace spelling, in the same root.
+        try #"{"mcpServers":{"pdf":{"command":"npx","args":["-y","@acme/server-pdf"]}}}"#
+            .write(
+                to: synced.appending(path: "pdf-viewer/.mcp.json"),
+                atomically: true, encoding: .utf8)
+        // Sits beside the plugin directories and is not one.
+        try "{}".write(
+            to: synced.appending(path: "gitkraken.meta.json"),
+            atomically: true, encoding: .utf8)
+        return home
+    }
+
+    func testSyncedPluginsAreFoundUnderBothManifestSpellings() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+
+        let names = Set(MCPRegistry.codePlugins(home: home).map(\.name))
+        XCTAssertEqual(names, ["plugin:gitkraken:gitkraken", "plugin:pdf-viewer:pdf"])
+    }
+
+    /// The whole point of finding the declaration is the join, and the join is
+    /// by name. A plugin named from the wrong directory is silently useless.
+    func testASyncedPluginMatchesItsRunningProcess() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+
+        let registry = MCPRegistry(declarations: MCPRegistry.codePlugins(home: home))
+        let running = ProcessSnapshot(
+            pid: 4821, parentPID: 900, userID: 501, name: "npm",
+            arguments: ["npm", "exec", "@gitkraken/gk", "mcp", "--plugin"],
+            startedAt: Date(timeIntervalSince1970: 0), residentBytes: 1 << 20)
+        XCTAssertEqual(
+            registry.declaration(matching: running)?.name, "plugin:gitkraken:gitkraken")
     }
 }

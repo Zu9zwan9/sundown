@@ -35,3 +35,6 @@ strategy/
 
 # Signing material. See .private/README.md.
 .private/
+
+# Local Claude Code permissions, per-machine.
+.claude/

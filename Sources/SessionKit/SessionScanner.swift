@@ -150,6 +150,9 @@ public actor SessionScanner {
         // Classify first, so subtree collection knows where to stop.
         var matches: [pid_t: Classifier.Match] = [:]
         var declarations: [pid_t: MCPRegistry.Declaration] = [:]
+        // Declarations borrowed from an ancestor, tracked apart because they
+        // name a link in a chain rather than an instance of a server.
+        var borrowed: Set<pid_t> = []
 
         for process in processes {
             guard case .allowed = guardrail.verdict(for: process) else { continue }
@@ -166,6 +169,16 @@ public actor SessionScanner {
                 declarations[process.pid] = declaration
             } else if let match = classifier.classify(process) {
                 matches[process.pid] = match
+
+                // The classifier can see a server here but cannot name it: the
+                // command the user declared belongs to an ancestor, and the
+                // wrapper chain below it carries no trace. Naming it is the
+                // difference between a row reading `node` and one that joins
+                // to transcript history.
+                if let ancestral = registry.declaration(matching: process, in: table) {
+                    declarations[process.pid] = ancestral
+                    borrowed.insert(process.pid)
+                }
             }
         }
 
@@ -184,7 +197,8 @@ public actor SessionScanner {
         }
 
         let superseded = supersededPIDs(
-            declarations: declarations, names: names, owners: owners, table: table
+            declarations: declarations, borrowed: borrowed,
+            names: names, owners: owners, table: table
         )
         let listeners = currentListeners()
         let portsByPID = Dictionary(grouping: listeners, by: \.pid)
@@ -337,6 +351,7 @@ public actor SessionScanner {
     /// `filesystem` servers. Only the newest is doing anything.
     private func supersededPIDs(
         declarations: [pid_t: MCPRegistry.Declaration],
+        borrowed: Set<pid_t>,
         names: [pid_t: String],
         owners: [pid_t: Provider],
         table: [pid_t: ProcessSnapshot]
@@ -352,7 +367,12 @@ public actor SessionScanner {
         /// server. Identical argv means identical invocation, which is the
         /// only case where one of the pair is provably redundant.
         func identity(_ pid: pid_t) -> String? {
-            if let declaration = declarations[pid] { return declaration.identity }
+            // A borrowed declaration names one link in a server's chain, not a
+            // competing instance of it. Keying four chain links on the shared
+            // name would call three of them redundant and offer to end them.
+            if let declaration = declarations[pid], !borrowed.contains(pid) {
+                return declaration.identity
+            }
             guard let process = table[pid], !process.commandLine.isEmpty else { return nil }
             return "\(owners[pid]?.id ?? "?")\u{1F}\(process.commandLine)"
         }

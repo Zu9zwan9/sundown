@@ -199,6 +199,11 @@ extension ServerRecord {
         where declaration.transport == .stdio
             && !runningKeys.contains(declaration.identity)
             && liveClients.contains(declaration.client)
+            // A server you have never called and that is not running is not an
+            // absence, it is a plugin you installed and did not open. Once the
+            // synced plugin directory is read that is most of them, and this
+            // section is for the ones you expected to be there.
+            && (usage[declaration.transcriptID]?.calls ?? 0) > 0
         {
             records.append(
                 ServerRecord(

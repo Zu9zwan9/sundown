@@ -222,3 +222,47 @@ extension IdleServerReportTests {
         XCTAssertTrue(lines.contains("more requests"), lines)
     }
 }
+
+/// Reading the synced plugin directory turned this section from eight lines
+/// into twenty-three: every plugin the user had installed and never opened.
+/// The question it answers is "did something I expected fail to start", and a
+/// plugin inventory answers a question nobody asked.
+final class DeclaredNotRunningTests: XCTestCase {
+
+    private func declaration(_ name: String) -> MCPRegistry.Declaration {
+        .init(name: name, client: "Claude Code", fingerprint: name)
+    }
+
+    private func build(usage: [(String, Int)]) -> [ServerRecord] {
+        ServerRecord.build(
+            targets: [],
+            table: [:],
+            registry: MCPRegistry(declarations: [
+                declaration("jbcontext"), declaration("plugin:pubmed:FHIR"),
+            ]),
+            metrics: TranscriptMetrics(
+                turns: [.init(input: 1, cacheCreation: 40_000, cacheRead: 0, output: 1)],
+                sessionCount: 10,
+                serverUsage: usage.map {
+                    .init(server: $0.0, calls: $0.1, resultCharacters: $0.1 * 400)
+                }
+            ),
+            agentClients: ["Claude Code"]
+        )
+    }
+
+    func testAServerYouHaveUsedAndThatIsGoneIsWorthSaying() {
+        let absent = build(usage: [("jbcontext", 23)])
+            .filter { $0.state == .declaredNotRunning }
+            .map(\.configKey)
+        XCTAssertEqual(absent, ["Claude Code/jbcontext"])
+    }
+
+    /// The plugin has never been called in any session. Its absence from the
+    /// process table is not news.
+    func testAServerYouHaveNeverCalledIsNotAnAbsence() {
+        let absent = build(usage: [])
+            .filter { $0.state == .declaredNotRunning }
+        XCTAssertTrue(absent.isEmpty, "got \(absent.map(\.configKey))")
+    }
+}

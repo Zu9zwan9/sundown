@@ -45,6 +45,17 @@ public struct Provider: Hashable, Sendable, Identifiable, Comparable {
         a.rank == b.rank ? a.id < b.id : a.rank < b.rank
     }
 
+    /// The client a process *is*, if any.
+    ///
+    /// Ancestry walks stop here: a client is where one server's subtree ends
+    /// and the next one's begins.
+    public static func identifying(_ process: ProcessSnapshot) -> Provider? {
+        if let path = process.arguments.first, let bundle = fromBundlePath(path) {
+            return bundle
+        }
+        return fromExecutable(process.executable)
+    }
+
     /// Resolve from a CLI's executable name — argv[0]'s last component.
     public static func fromExecutable(_ executable: String) -> Provider? {
         switch executable.lowercased() {
