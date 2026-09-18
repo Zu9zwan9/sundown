@@ -32,3 +32,6 @@ node_modules/
 # Private strategy, research and interview recruiting lists.
 # Backed up at ~/Developer/sundown-strategy-private/
 strategy/
+
+# Signing material. See .private/README.md.
+.private/
