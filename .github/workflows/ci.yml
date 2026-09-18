@@ -40,6 +40,19 @@ jobs:
           swift run sundown --list-providers
           swift run sundown --calibrate
 
+      # The one safety branch a unit test cannot reach: main.swift asks
+      # isatty() before prompting, and refuses rather than hanging on a prompt
+      # nobody will answer. If this ever exits 0, an unattended run gained the
+      # power to terminate without consent.
+      - name: Refuses to act unattended without --yes
+        run: |
+          swift build -c release --product sundown
+          if echo "" | ./.build/release/sundown --phase after; then
+            echo "✗ acted on a non-TTY without --yes"
+            exit 1
+          fi
+          echo "✓ refused, as designed"
+
   format:
     name: Format
     # macos-latest rather than a pinned image: the package declares its own
