@@ -39,5 +39,9 @@ let package = Package(
         ),
 
         .testTarget(name: "SessionKitTests", dependencies: ["SessionKit"]),
+
+        // The parser decides whether a run may end processes. Untested
+        // until 2026-09-18, on the one code path with no undo.
+        .testTarget(name: "SundownCLITests", dependencies: ["SundownCLI"]),
     ]
 )
