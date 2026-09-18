@@ -63,25 +63,14 @@ jobs:
 
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
-      - name: Store notary credentials
+
+      # release-cli.sh builds, signs, tars and records the checksum in
+      # package.json. There is no .app to notarise any more — the GUI was
+      # removed on 2026-09-18 in favour of the SwiftBar plugin.
+      - name: Build and sign the CLI
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: |
-          xcrun notarytool store-credentials "sundown-notary" \
-            --apple-id "$APPLE_ID" \
-            --team-id "$APPLE_TEAM_ID" \
-            --password "$APPLE_APP_PASSWORD"
-
-      - name: Build, sign, notarise, staple
-        run: ./Scripts/release.sh --dmg
-
-      - name: Package the CLI
-        run: |
-          cd build
-          tar -czf sundown-cli-macos.tar.gz sundown
-          shasum -a 256 sundown-cli-macos.tar.gz | tee cli-sha256.txt
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+        run: ./Scripts/release-cli.sh
 
       # Tarball checksum for the Homebrew formula, printed where you can copy
       # it rather than recomputing by hand at 1am.
@@ -99,9 +88,7 @@ jobs:
           draft: true
           generate_release_notes: true
           files: |
-            build/Sundown.dmg
-            build/sundown-cli-macos.tar.gz
-            build/cli-sha256.txt
+            build/sundown-macos-*.tar.gz
 
       # Belt and braces: hosted runners are destroyed, but leaving a signing
       # identity in a keychain is not a habit worth having.

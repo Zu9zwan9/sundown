@@ -1,5 +1,12 @@
 # Distribution
 
+> **The menu bar app was removed on 2026-09-18.** It was 1,117 lines of SwiftUI
+> plus 415 lines of bundling and release scripts, it was never in a release, and
+> this README already told people to use SwiftBar instead. `Scripts/sundown.15m.sh`
+> is 31 lines and does the ambient job. This document is kept because the
+> reasoning about the App Sandbox and notarisation is still correct and still
+> worth reading before anyone proposes shipping a bundle again.
+
 ## The Mac App Store is not available to this app
 
 Not "difficult" — structurally closed. Worth knowing before anyone opens App

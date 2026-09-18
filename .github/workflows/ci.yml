@@ -66,38 +66,3 @@ jobs:
             exit 1
           fi
           echo "✓ formatting clean"
-
-  bundle:
-    name: Bundle app
-    # macos-latest rather than a pinned image: the package declares its own
-    # platform floor (macOS 14) and pins nothing else, so tracking the current
-    # image catches toolchain drift early instead of hiding it behind a pin
-    # that silently ages out. The Versions step makes the drift visible.
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      # The icon generator needs Pillow. bundle.sh treats it as optional, so
-      # without this the job would pass while quietly shipping a bundle with
-      # no icon — installing it here is what makes the icns assertion below
-      # mean something.
-      # `|| true` because bundle.sh falls back to its own venv if this fails —
-      # a runner image changing its pip policy should not fail the build.
-      - name: Install Pillow
-        run: pip3 install --break-system-packages pillow || true
-
-      # Ad-hoc signed — proves the bundle assembles and the icon generates.
-      # Real signing happens only in release.yml, which needs secrets.
-      - name: Bundle
-        run: ./Scripts/bundle.sh
-      - name: Verify bundle structure
-        run: |
-          test -f build/Sundown.app/Contents/MacOS/Sundown
-          test -f build/Sundown.app/Contents/Info.plist
-          test -f build/Sundown.app/Contents/Resources/Sundown.icns
-          test -f build/sundown
-          echo "✓ bundle complete"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Sundown-unsigned
-          path: build/Sundown.app
-          retention-days: 7
