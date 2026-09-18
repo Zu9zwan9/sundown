@@ -14,13 +14,6 @@ class Sundown < Formula
   sha256 "e0f9bf096c3d2b3b6654a2ad606a260e536b673fe19087adac226b2b143003f5"
   head "https://github.com/Zu9zwan9/sundown.git", branch: "main"
 
-  # No `url`/`sha256` yet, on purpose. There is no tag to point at, so any
-  # pair written here is either a 404 or a placeholder that fails with a
-  # checksum mismatch — the two worst ways to greet a first install.
-  #
-  # Head-only is a valid formula: `brew install --HEAD` works the moment the
-  # repo is public, and `brew install` without it says "no stable download",
-  # which is true. Add the stable pair when you tag — see README.md step 3.
 
   depends_on xcode: ["15.0", :build]
   depends_on macos: :sonoma # macOS 14, for MenuBarExtra and @Observable
