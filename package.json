@@ -32,7 +32,6 @@
     "macos"
   ],
   "checksums": {
-    "arm64": "REPLACE_WITH_SHA256_OF_sundown-macos-arm64.tar.gz",
-    "x64": "REPLACE_WITH_SHA256_OF_sundown-macos-x64.tar.gz"
+    "arm64": "9a55ab4d90c9dd3a022c4380fcd1345587a7d1b859d797e39f9654e6caeea14a"
   }
 }
