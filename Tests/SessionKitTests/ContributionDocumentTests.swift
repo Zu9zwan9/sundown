@@ -12,7 +12,9 @@ final class ContributionDocumentTests: XCTestCase {
     }
 
     /// Matched to a declaration — the shape that may be published.
-    private func matched(_ name: String, client: String = "Claude Code", calls: Int)
+    private func matched(
+        _ name: String, client: String = "Claude Code", calls: Int
+    )
         -> ServerRecord
     {
         ServerRecord(
@@ -52,7 +54,8 @@ final class ContributionDocumentTests: XCTestCase {
 
     func testCarriesTheMeasuredTotalAndTheExactSet() throws {
         let doc = try XCTUnwrap(
-            ContributionDocument.build(from: report(used: [("jbcontext", 23)], idle: ["awspricing"]))
+            ContributionDocument.build(
+                from: report(used: [("jbcontext", 23)], idle: ["awspricing"]))
         )
         XCTAssertEqual(doc.standingChargeTokens, 74_031)
         XCTAssertEqual(doc.sessionsExamined, 76)
@@ -83,8 +86,10 @@ final class ContributionDocumentTests: XCTestCase {
     /// The same set on two machines must serialise identically or the index
     /// cannot deduplicate, and every row looks like new evidence.
     func testServerOrderIsStableRegardlessOfInputOrder() throws {
-        let a = try XCTUnwrap(ContributionDocument.build(from: report(used: [("zulu", 1), ("alpha", 2)])))
-        let b = try XCTUnwrap(ContributionDocument.build(from: report(used: [("alpha", 2), ("zulu", 1)])))
+        let a = try XCTUnwrap(
+            ContributionDocument.build(from: report(used: [("zulu", 1), ("alpha", 2)])))
+        let b = try XCTUnwrap(
+            ContributionDocument.build(from: report(used: [("alpha", 2), ("zulu", 1)])))
         XCTAssertEqual(a.servers.map(\.id), ["alpha", "zulu"])
         XCTAssertEqual(try a.json(), try b.json())
     }

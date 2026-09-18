@@ -186,10 +186,10 @@ final class ContextSnapshotTests: XCTestCase {
             .appendingPathComponent("v1-\(UUID().uuidString).json")
         defer { try? FileManager.default.removeItem(at: url) }
         try #"""
-            {"fixedPrefixTokens":39358,
-             "servers":["pdf","pdf","pdf","pdf","aws-api","aws-api","prisma mcp","prisma mcp"],
-             "takenAt":"2026-08-14T23:13:01Z","turnsObserved":795}
-            """#.write(to: url, atomically: true, encoding: .utf8)
+        {"fixedPrefixTokens":39358,
+         "servers":["pdf","pdf","pdf","pdf","aws-api","aws-api","prisma mcp","prisma mcp"],
+         "takenAt":"2026-08-14T23:13:01Z","turnsObserved":795}
+        """#.write(to: url, atomically: true, encoding: .utf8)
 
         let loaded = try ContextSnapshot.load(from: url)
         XCTAssertTrue(loaded.migrated)
