@@ -184,3 +184,41 @@ final class IdleServerReportTests: XCTestCase {
         XCTAssertTrue(report.report().joined().contains("No MCP servers"))
     }
 }
+
+// MARK: - Headroom
+
+/// The number nothing else in this category can compute, because it needs the
+/// connected set and not just the spend. Kept honest by being a pure ratio.
+extension IdleServerReportTests {
+
+    private func report(used: Int, idle: Int, prefix: Int) -> IdleServerReport {
+        IdleServerReport(
+            used: (0..<used).map { .init(record: running("used\($0)", calls: 5), calls: 5) },
+            idle: (0..<idle).map { .init(record: running("idle\($0)", calls: 0), calls: 0) },
+            unknown: [],
+            fixedPrefixTokens: prefix,
+            sessionsExamined: 10
+        )
+    }
+
+    func testHalfTheServersIdleDoublesTheRequests() {
+        let r = report(used: 1, idle: 1, prefix: 100_000)
+        XCTAssertEqual(r.estimatedIdleTokens, 50_000)
+        XCTAssertEqual(try XCTUnwrap(r.requestHeadroomMultiplier), 2.0, accuracy: 0.001)
+    }
+
+    func testNothingIdleMeansNoHeadroomClaim() {
+        XCTAssertNil(report(used: 3, idle: 0, prefix: 100_000).requestHeadroomMultiplier)
+    }
+
+    /// If every connected server is idle the remainder is zero and the ratio is
+    /// undefined. Returning a huge number here would print a boast.
+    func testEveryServerIdleClaimsNothingRatherThanInfinity() {
+        XCTAssertNil(report(used: 0, idle: 2, prefix: 100_000).requestHeadroomMultiplier)
+    }
+
+    func testHeadroomAppearsInTheReport() {
+        let lines = report(used: 3, idle: 1, prefix: 100_000).report().joined(separator: "\n")
+        XCTAssertTrue(lines.contains("more requests"), lines)
+    }
+}

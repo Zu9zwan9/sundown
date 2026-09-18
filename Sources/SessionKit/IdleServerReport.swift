@@ -97,6 +97,23 @@ public struct IdleServerReport: Sendable {
         guard connectedCount > 0, !idle.isEmpty else { return 0 }
         return fixedPrefixTokens / connectedCount * idle.count
     }
+
+    /// How many more requests the same budget buys once the idle set is gone.
+    ///
+    /// Quota-independent on purpose. For any budget `B`, requests go from
+    /// `B / prefix` to `B / (prefix - idle)`, and `B` cancels out of the ratio.
+    /// That is the whole reason this can be answered offline: no plan, no
+    /// account, no usage API, no network. Every tool that forecasts *when* you
+    /// hit a limit needs all four.
+    ///
+    /// Inherits the proportional split in `estimatedIdleTokens`, so it is an
+    /// order of magnitude and `report()` says so. `nil` when there is nothing
+    /// to reclaim.
+    public var requestHeadroomMultiplier: Double? {
+        let remaining = fixedPrefixTokens - estimatedIdleTokens
+        guard estimatedIdleTokens > 0, remaining > 0 else { return nil }
+        return Double(fixedPrefixTokens) / Double(remaining)
+    }
 }
 
 // MARK: - Building it
@@ -228,6 +245,13 @@ extension IdleServerReport {
                         + "\(estimatedIdleTokens.formatted()) tokens of your "
                         + "\(fixedPrefixTokens.formatted())-token standing charge."
                 )
+                if let multiplier = requestHeadroomMultiplier {
+                    let percent = Int(((multiplier - 1) * 100).rounded())
+                    lines.append(
+                        "  Disconnecting them buys roughly \(percent)% more requests"
+                            + " per window, on any plan."
+                    )
+                }
                 lines.append(
                     "  Rough because the prefix includes the system prompt and schemas"
                 )
