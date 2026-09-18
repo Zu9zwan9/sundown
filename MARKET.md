@@ -2,6 +2,15 @@
 
 Researched August 2026. Sources at the end.
 
+> **Two corrections, later verified.** (1) The "seven open issues" line below
+> was already wrong when published — several had closed, the earliest in
+> December 2025. (2) The competitive set is missing
+> [antiburn](https://github.com/antiburn/antiburn), which did not exist when
+> this was written and now ships the unused-server detection this document
+> treats as unoccupied. Read
+> `strategy/validation/evidence-update-2026-09-18.md` before citing anything
+> here.
+
 ## The finding that matters most
 
 **The problem is real, severe, and cross-vendor. The business is probably not.**

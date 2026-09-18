@@ -72,15 +72,21 @@ free.
 reaps orphaned Claude Code processes across three layers, and is more thorough
 at that specific job than Sundown's teardown.
 
-**What is not available anywhere else** is the join between them:
+**[antiburn](https://github.com/antiburn/antiburn)** (free, open source)
+reports unused MCP servers from your session transcripts, and does it across
+sixteen agents where Sundown reads two. If all you want is to know which
+servers you never call, install antiburn — its coverage is better than mine.
 
-- **which connected servers you never call.** Answering that needs the live
-  process table *and* the session history. Config tools read one, transcript
-  readers read the other, and nothing else reads both.
-- **snapshot / compare**, to learn what one specific server costs you, measured
-  rather than estimated.
+**What is left that is actually mine** is narrower than I first claimed:
 
-If those two are not interesting to you, you probably do not need this.
+- **Acting on the answer.** antiburn reports and stops there; cc-reaper ends
+  processes but measures nothing. Sundown is the only one that does both, and
+  the part that earns a button with no undo is `SafetyGuard` — the rules about
+  what must never be touched, and the 104 tests that hold them.
+- **`--snapshot` / `--compare`**, to learn what one specific server costs on
+  your own workload, measured rather than estimated.
+
+If neither of those is interesting to you, you probably do not need this.
 
 ## What it refuses to say
 

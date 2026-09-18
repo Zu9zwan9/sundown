@@ -39,7 +39,16 @@ answering it requires the live process table *and* the transcripts.
 
 `/context` can't: it sees what's loaded, never what you used. Transcript
 readers can't: they see usage, never what's connected. Sundown reads both.
-That's structural, not clever, and it's the whole moat.
+That's structural, not clever.
+
+> **Correction, 2026-09-18.** It was not the whole moat, and this paragraph
+> was wrong within days of being written.
+> [antiburn](https://github.com/antiburn/antiburn) — created 2026-08-12, two
+> days before the research above — ships transcript-based unused-MCP detection
+> across sixteen agents. The reasoning here was scoped to *vendors*, and it
+> held for vendors; a third party was never in the argument. What survives is
+> the half nobody else does: acting safely on the answer. See
+> `strategy/validation/evidence-update-2026-09-18.md`.
 
 ---
 
