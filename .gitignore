@@ -28,3 +28,7 @@ DerivedData/
 # npm packaging
 node_modules/
 *.tgz
+
+# Private strategy, research and interview recruiting lists.
+# Backed up at ~/Developer/sundown-strategy-private/
+strategy/
