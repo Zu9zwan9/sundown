@@ -10,8 +10,8 @@ class Sundown < Formula
   desc "Reap orphaned MCP servers and agent processes on macOS"
   homepage "https://github.com/Zu9zwan9/sundown"
   license "MIT"
-  url "https://github.com/Zu9zwan9/sundown/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "e0f9bf096c3d2b3b6654a2ad606a260e536b673fe19087adac226b2b143003f5"
+  url "https://github.com/Zu9zwan9/sundown/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "43df3f5a0e53e58040a3c152d8100be3e1bd12e919ab20237906c26ccfddc4f5"
   head "https://github.com/Zu9zwan9/sundown.git", branch: "main"
 
 
