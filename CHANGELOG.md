@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.1 — 2026-09-18
+
+Release plumbing only. No behaviour changed.
+
+The release workflow read `BUILD_CERTIFICATE_BASE64`, `P12_PASSWORD` and
+`KEYCHAIN_PASSWORD`; the repository holds those values under `MACOS_CERT_P12`,
+`MACOS_CERT_PASSWORD` and `MACOS_KEYCHAIN_PASSWORD`. Renaming three references
+beats re-pasting a certificate.
+
+Its header also still listed `APPLE_ID`, `APPLE_TEAM_ID` and
+`APPLE_APP_PASSWORD` as required. Nothing has read them since the menu bar app
+was removed and notarisation went with it.
+
+`SIGN_IDENTITY` now defaults to the certificate's common name, which is public
+and printed in every signed binary, so it needs no secret. It is quoted,
+because that name contains a colon followed by a space and unquoted YAML reads
+that as a mapping. GitHub could not parse the file at all and registered the
+workflow under its own path instead of its name, which is why dispatching it
+reported a missing trigger.
+
+0.2.0 shipped unsigned through Homebrew, which builds from source and does not
+care. This is the first tag that produces a signed tarball.
+
 ## 0.2.0 — 2026-09-18
 
 Sundown could see servers running and could not name them, so it declined to
