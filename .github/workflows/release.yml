@@ -1,17 +1,23 @@
 name: Release
 
-# Tag-triggered. Signs, notarises, staples, and attaches the artefacts to a
-# GitHub release.
+# Tag-triggered. Builds, signs and attaches the CLI tarball to a draft GitHub
+# release. Nothing is notarised: the .app was removed on 2026-09-18, and a CLI
+# fetched by a package manager never meets Gatekeeper's quarantine path.
 #
 # Required repository secrets:
 #
-#   BUILD_CERTIFICATE_BASE64  Developer ID Application cert as .p12, base64'd:
+#   MACOS_CERT_P12            Developer ID Application cert as .p12, base64'd:
 #                               base64 -i DeveloperID.p12 | pbcopy
-#   P12_PASSWORD              Password you set when exporting the .p12
-#   KEYCHAIN_PASSWORD         Any random string; a throwaway keychain uses it
-#   APPLE_ID                  Apple ID email
-#   APPLE_TEAM_ID             10-character Team ID
-#   APPLE_APP_PASSWORD        App-specific password from appleid.apple.com
+#   MACOS_CERT_PASSWORD       Password set when exporting that .p12
+#   MACOS_KEYCHAIN_PASSWORD   Any random string; a throwaway keychain uses it
+#
+# That is the whole list. APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD were
+# listed here until 2026-09-18 and no step has read them since the .app was
+# removed. Setting them costs nothing and does nothing.
+#
+# SIGN_IDENTITY is not a secret. It is the certificate's common name, printed
+# in every signed binary, so it has a default below and a secret only overrides
+# it for forks signing under their own identity.
 #
 # Note: no provisioning profile. Those are for App Store and device builds.
 # Developer ID direct distribution doesn't use one, and adding it to the
@@ -43,9 +49,9 @@ jobs:
 
       - name: Import signing certificate
         env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERT_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
           CERT_PATH=$RUNNER_TEMP/certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
@@ -69,7 +75,7 @@ jobs:
       # removed on 2026-09-18 in favour of the SwiftBar plugin.
       - name: Build and sign the CLI
         env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY || 'Developer ID Application: BBMM TECHNOLOGIES INC. (KSDM65552F)' }}
         run: ./Scripts/release-cli.sh
 
       # Tarball checksum for the Homebrew formula, printed where you can copy
