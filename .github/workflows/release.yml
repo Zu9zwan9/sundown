@@ -75,7 +75,9 @@ jobs:
       # removed on 2026-09-18 in favour of the SwiftBar plugin.
       - name: Build and sign the CLI
         env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY || 'Developer ID Application: BBMM TECHNOLOGIES INC. (KSDM65552F)' }}
+          # Quoted: the identity contains ": ", which unquoted YAML reads
+          # as a mapping and the whole file then fails to parse.
+          SIGN_IDENTITY: "${{ secrets.SIGN_IDENTITY || 'Developer ID Application: BBMM TECHNOLOGIES INC. (KSDM65552F)' }}"
         run: ./Scripts/release-cli.sh
 
       # Tarball checksum for the Homebrew formula, printed where you can copy
